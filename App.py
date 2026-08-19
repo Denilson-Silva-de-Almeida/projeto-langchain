@@ -4,7 +4,10 @@ import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
-from langchain.agents import create_react_agent, AgentExecutor
+try:
+    from langchain_classic.agents import create_react_agent, AgentExecutor
+except ImportError:
+    from langchain.agents import create_react_agent, AgentExecutor
 from ferramentas import criar_ferramentas
 
 # Inicia o app
@@ -49,6 +52,17 @@ if arquivo_carregado:
     # Configuração do LLM (Groq)
     load_dotenv()
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    if not GROQ_API_KEY:
+        try:
+            if hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
+                GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+        except Exception:
+            pass
+
+    if not GROQ_API_KEY:
+        st.error("⚠️ Chave `GROQ_API_KEY` não encontrada! Configure sua chave no arquivo `.env` ou nos Secrets do Streamlit Cloud.")
+        st.stop()
+
     llm = ChatGroq(
         api_key=GROQ_API_KEY,
         model_name="llama3-70b-8192",

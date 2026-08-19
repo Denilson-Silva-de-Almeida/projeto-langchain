@@ -2,9 +2,12 @@ streamlit
 pandas
 python-dotenv
 langchain
+langchain-classic
+langchain-community
 langchain-groq
 langchain-core
 langchain-experimental
 matplotlib
 seaborn
 tabulate
+

@@ -11,16 +11,23 @@ import seaborn as sns
 import streamlit as st
 from langchain_experimental.tools import PythonAstREPLTool
 
-# Obtenção da chave de API
-load_dotenv()
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+def get_groq_llm():
+    load_dotenv()
+    key = os.getenv("GROQ_API_KEY")
+    if not key:
+        try:
+            if hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
+                key = st.secrets["GROQ_API_KEY"]
+        except Exception:
+            pass
+    if not key:
+        key = "gsk_placeholder"
+    return ChatGroq(
+        api_key=key,
+        model_name="llama3-70b-8192",
+        temperature=0
+    )
 
-# Configurações do LLM
-llm = ChatGroq(
-    api_key=GROQ_API_KEY,
-    model_name="llama3-70b-8192",
-    temperature=0
-)
 
 # 1. Relatório Executivo de Faturamento e Receita
 @tool
@@ -74,7 +81,7 @@ def relatorio_faturamento_receita(pergunta: str, df: pd.DataFrame) -> str:
         input_variables=["pergunta", "shape", "columns", "duplicados", "nulos", "describe_num", "amostra"]
     )
 
-    cadeia = template_resposta | llm | StrOutputParser()
+    cadeia = template_resposta | get_groq_llm() | StrOutputParser()
 
     resposta = cadeia.invoke({
         "pergunta": pergunta,
@@ -131,7 +138,7 @@ def relatorio_inadimplencia_aging(pergunta: str, df: pd.DataFrame) -> str:
         input_variables=["pergunta", "colunas", "describe_num", "amostra"]
     )
 
-    cadeia = template_resposta | llm | StrOutputParser()
+    cadeia = template_resposta | get_groq_llm() | StrOutputParser()
 
     resposta = cadeia.invoke({
         "pergunta": pergunta,
@@ -191,7 +198,7 @@ def gerar_grafico_financeiro(pergunta: str, df: pd.DataFrame) -> str:
         input_variables=["pergunta", "colunas", "amostra"]
     )
 
-    cadeia = template_resposta | llm | StrOutputParser()
+    cadeia = template_resposta | get_groq_llm() | StrOutputParser()
     codigo_bruto = cadeia.invoke({
         "pergunta": pergunta,
         "colunas": colunas_info,

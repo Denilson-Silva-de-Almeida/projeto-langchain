@@ -5,6 +5,7 @@ from langchain_core.tools import tool, Tool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
@@ -36,7 +37,7 @@ def relatorio_faturamento_receita(pergunta: str, df: pd.DataFrame) -> str:
     duplicados = int(df.duplicated().sum())
     
     # Estatísticas de colunas numéricas (valores, quantidades, etc.)
-    describe_num = df.describe(include=['number']).transpose().to_string() if not df.select_dtypes(include=['number']).empty else "Nenhuma coluna numérica identificada"
+    describe_num = df.describe(include=[np.number]).transpose().to_string() if not df.select_dtypes(include=np.number).empty else "Nenhuma coluna numérica identificada"
     amostra = df.head(3).to_dict(orient='records')
 
     # Prompt especializado em BPO Financeiro e Faturamento
@@ -98,7 +99,7 @@ def relatorio_inadimplencia_aging(pergunta: str, df: pd.DataFrame) -> str:
     """
     # Coleta de métricas financeiras
     colunas = df.dtypes.to_dict()
-    describe_num = df.describe(include=['number']).transpose().to_string() if not df.select_dtypes(include=['number']).empty else "Nenhuma coluna numérica identificada"
+    describe_num = df.describe(include=[np.number]).transpose().to_string() if not df.select_dtypes(include=np.number).empty else "Nenhuma coluna numérica identificada"
     amostra = df.head(3).to_dict(orient='records')
 
     # Prompt especializado em Contas a Receber e Cobrança

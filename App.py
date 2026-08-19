@@ -4,10 +4,7 @@ import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
-try:
-    from langchain.agents import create_react_agent, AgentExecutor
-except ImportError:
-    from langchain_classic.agents import create_react_agent, AgentExecutor
+from langchain.agents import create_react_agent, AgentExecutor
 from ferramentas import criar_ferramentas
 
 # Inicia o app

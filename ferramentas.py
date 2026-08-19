@@ -247,13 +247,14 @@ def criar_ferramentas(df):
         return_direct=True
     )
 
-    ferramenta_python = PythonAstREPLTool(
+    python_repl = PythonAstREPLTool(locals={"df": df})
+    ferramenta_python = Tool(
         name="Consultas_Financeiras_Python",
+        func=python_repl.run,
         description="""Utilize esta ferramenta para calcular métricas financeiras pontuais, filtros específicos e consultas detalhadas
         em Python no DataFrame `df`. Exemplos: 'Qual o faturamento total em Março?', 'Quais clientes estão com faturas acima de R$ 5.000?',
         'Qual o valor total recebido via PIX?', 'Quantas faturas estão com status vencido?'.
-        Não use esta ferramenta para relatórios completos ou geração de gráficos.""",
-        locals={"df": df}
+        Não use esta ferramenta para relatórios completos ou geração de gráficos."""
     )
 
     return [

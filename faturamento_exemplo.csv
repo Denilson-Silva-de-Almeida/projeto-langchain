@@ -1,0 +1,21 @@
+numero_fatura,data_emissao,data_vencimento,data_pagamento,cliente,categoria_servico,valor_bruto,impostos,valor_liquido,forma_pagamento,status_pagamento,dias_atraso
+FAT-2024-001,2024-01-05,2024-01-20,2024-01-18,Tech Solutions Ltda,Consultoria de TI,12500.0,1050.0,11450.0,PIX,Pago,0
+FAT-2024-002,2024-01-08,2024-01-23,2024-01-23,Logistica Rapida S.A.,Transporte e Armazenagem,8400.0,720.0,7680.0,Boleto,Pago,0
+FAT-2024-003,2024-01-12,2024-01-27,2024-02-05,Varejo Global Comercio,BPO Financeiro,5200.0,430.0,4770.0,Transferencia,Pago,9
+FAT-2024-004,2024-01-15,2024-01-30,,Construtora Horizonte,Gestao de Folha,18900.0,1650.0,17250.0,Boleto,Vencido,45
+FAT-2024-005,2024-01-20,2024-02-04,2024-02-02,Industria Metalmec S.A.,Assessoria Fiscal,22000.0,1980.0,20020.0,Boleto,Pago,0
+FAT-2024-006,2024-01-25,2024-02-09,,Hospital Vida Saudavel,Consultoria Contabil,14300.0,1215.0,13085.0,Boleto,Vencido,35
+FAT-2024-007,2024-02-01,2024-02-16,2024-02-15,Tech Solutions Ltda,Desenvolvimento de Software,15800.0,1340.0,14460.0,PIX,Pago,0
+FAT-2024-008,2024-02-05,2024-02-20,2024-02-20,Alpha Distribuidora,BPO Financeiro,6700.0,570.0,6130.0,Cartao de Credito,Pago,0
+FAT-2024-009,2024-02-10,2024-02-25,,Construtora Horizonte,Planejamento Tributario,9500.0,810.0,8690.0,Boleto,Vencido,19
+FAT-2024-010,2024-02-15,2024-03-01,2024-02-28,Cafe & Graos Exportadora,Auditoria Interna,11200.0,950.0,10250.0,PIX,Pago,0
+FAT-2024-011,2024-02-18,2024-03-05,,Logistica Rapida S.A.,BPO Financeiro,4800.0,410.0,4390.0,Boleto,Pendente,0
+FAT-2024-012,2024-02-22,2024-03-08,2024-03-07,Educar Treinamentos,Treinamento Corporativo,3900.0,330.0,3570.0,Cartao de Credito,Pago,0
+FAT-2024-013,2024-02-28,2024-03-15,,Industria Metalmec S.A.,Gestao de Folha,24500.0,2100.0,22400.0,Transferencia,Pendente,0
+FAT-2024-014,2024-03-02,2024-03-17,,Varejo Global Comercio,Assessoria Fiscal,7100.0,600.0,6500.0,Boleto,Pendente,0
+FAT-2024-015,2024-03-05,2024-03-20,,Hospital Vida Saudavel,Consultoria Contabil,16000.0,1360.0,14640.0,Boleto,Pendente,0
+FAT-2024-016,2024-03-08,2024-03-23,2024-03-22,Tech Solutions Ltda,Suporte e Infraestrutura,8900.0,750.0,8150.0,PIX,Pago,0
+FAT-2024-017,2024-03-10,2024-03-25,,Alpha Distribuidora,BPO Financeiro,6700.0,570.0,6130.0,Cartao de Credito,Pendente,0
+FAT-2024-018,2024-03-12,2024-03-27,,Construtora Horizonte,Gestao de Folha,19500.0,1700.0,17800.0,Boleto,Pendente,0
+FAT-2024-019,2024-03-15,2024-03-30,,Cafe & Graos Exportadora,Auditoria Interna,11200.0,950.0,10250.0,PIX,Pendente,0
+FAT-2024-020,2024-03-18,2024-04-02,,Inovacao & Design ME,Consultoria de TI,4300.0,360.0,3940.0,PIX,Pendente,0

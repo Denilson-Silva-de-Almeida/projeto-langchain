@@ -24,7 +24,7 @@ def get_groq_llm():
         key = "gsk_placeholder"
     return ChatGroq(
         api_key=key,
-        model_name="llama-3.3-70b-versatile",
+        model_name="llama-3.1-8b-instant",
         temperature=0
     )
 

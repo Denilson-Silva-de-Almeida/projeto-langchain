@@ -65,7 +65,7 @@ if arquivo_carregado:
 
     llm = ChatGroq(
         api_key=GROQ_API_KEY,
-        model_name="llama-3.3-70b-versatile",
+        model_name="llama-3.1-8b-instant",
         temperature=0
     )
 

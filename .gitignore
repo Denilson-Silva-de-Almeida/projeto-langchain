@@ -1,0 +1,23 @@
+# Arquivos de ambiente e segredos (chaves de API)
+.env
+*.env
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+ENV/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.ipynb_checkpoints
+
+# Configurações do VS Code e analisador
+.vscode/
+pyrightconfig.json
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

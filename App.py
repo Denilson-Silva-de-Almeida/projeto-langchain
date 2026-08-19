@@ -11,36 +11,45 @@ except ImportError:
 from ferramentas import criar_ferramentas
 
 # Inicia o app
-st.set_page_config(page_title="Assistente de análise de dados com IA", layout="centered")
-st.title("🦜 Assistente de análise de dados com IA")
+st.set_page_config(
+    page_title="Assistente de BPO Financeiro & Faturamento",
+    layout="centered",
+    page_icon="💼"
+)
 
-# Descrição da ferramenta
+st.title("💼 Assistente de BPO Financeiro & Faturamento com IA")
+
+# Descrição da ferramenta especializada
 st.info("""
-Este assistente utiliza um agente, criado com Langchain, para te ajudar a explorar, analisar e visualizar dados de forma interativa.
-Basta fazer o upload de um arquivo CSV e você poderá:
+Este assistente foi desenvolvido especialmente para **BPO Financeiro, Gestão de Faturamento e Contas a Receber**.
+Com apoio de um agente inteligente via **LangChain** e **Groq**, você pode:
 
-- 📄 **Gerar relatórios automáticos**:
-    - **Relatório de informações gerais**: apresenta a dimensão do DataFrame, nomes e tipos das colunas, contagem de dados nulos e duplicados, além de sugestões de tratamentos e análises adicionais.
-    - **Relatório de estatísticas descritivas**: exibe valores como média, mediana, desvio padrão, mínimo e máximo; identifica possíveis outliers e sugere próximos passos com base nos padrões detectados.
+- 📊 **Gerar Relatórios Executivos Automáticos**:
+    - **Relatório de Faturamento e Receita**: Volume faturado, ticket médio, análise de clientes/produtos, meios de pagamento e qualidade dos dados fiscais.
+    - **Relatório de Inadimplência & Aging List**: Diagnóstico de contas a receber, faixas de vencimento, concentração de risco e régua de cobrança.
 
-- 🔎 **Fazer perguntas simples sobre os dados**: como "Qual é a média da coluna X?", "Quantos registros existem para cada categoria da coluna Y?".
+- 🔎 **Realizar Consultas Financeiras em Linguagem Natural**: como *"Qual é o faturamento total do cliente X?"*, *"Qual o total de títulos vencidos há mais de 30 dias?"*, *"Quanto foi recebido via PIX vs Boleto?"*.
                 
-- 📊 **Criar gráficos automaticamente** com base em perguntas em linguagem natural.
-
-Ideal para analistas, cientistas de dados e equipes que buscam agilidade e insights rápidos com apoio de IA.
+- 📈 **Gerar Gráficos Financeiros**: Curva ABC de clientes, evolução temporal de faturamento, distribuição por status de pagamento e meios de cobrança.
 """)
 
-# Upload do CSV
-st.markdown("### 📁 Faça upload do seu arquivo CSV")
+# Upload da planilha de faturamento
+st.markdown("### 📁 Faça upload da sua planilha de faturamento (CSV)")
 arquivo_carregado = st.file_uploader("Selecione um arquivo CSV", type="csv", label_visibility="collapsed")
 
 if arquivo_carregado:
     df = pd.read_csv(arquivo_carregado)
-    st.success("Arquivo carregado com sucesso!")
-    st.markdown("### 🔍 Primeiras linhas do DataFrame")
+    st.success("Planilha carregada com sucesso!")
+
+    # Visão rápida dos dados
+    col1, col2 = st.columns(2)
+    col1.metric("Total de Lançamentos", f"{len(df):,} linhas".replace(",", "."))
+    col2.metric("Total de Colunas", f"{len(df.columns)} colunas")
+
+    st.markdown("### 🔍 Primeiras linhas da base de faturamento")
     st.dataframe(df.head())
 
-    # LLM
+    # Configuração do LLM (Groq)
     load_dotenv()
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     llm = ChatGroq(
@@ -49,40 +58,43 @@ if arquivo_carregado:
         temperature=0
     )
 
-    # Ferramentas
+    # Criação das ferramentas especializadas em BPO Financeiro
     tools = criar_ferramentas(df)
 
-    # Prompt react
+    # Prompt ReAct especializado em finanças
     df_head = df.head().to_markdown()
 
     prompt_react_pt = PromptTemplate(
         input_variables=["input", "agent_scratchpad", "tools", "tool_names"],
         partial_variables={"df_head": df_head},
         template="""
-        Você é um assistente que sempre responde em português.
+        Você é um consultor especialista em BPO Financeiro, Gestão de Faturamento e Controladoria que sempre responde em português.
 
-        Você tem acesso a um dataframe pandas chamado `df`.
+        Você tem acesso a um DataFrame pandas chamado `df` com dados de faturamento e movimentações financeiras.
         Aqui estão as primeiras linhas do DataFrame, obtidas com `df.head().to_markdown()`:
 
         {df_head}
 
-        Responda às seguintes perguntas da melhor forma possível.
+        Responda às solicitações e dúvidas financeiras da melhor forma possível.
 
         Para isso, você tem acesso às seguintes ferramentas:
 
         {tools}
 
-        Use o seguinte formato:
+        Use estritamente o seguinte formato de raciocínio:
 
-        Question: a pergunta de entrada que você deve responder  
-        Thought: você deve sempre pensar no que fazer  
+        Question: a pergunta ou solicitação financeira de entrada  
+        Thought: você deve sempre pensar no que fazer passo a passo  
         Action: a ação a ser tomada, deve ser uma das [{tool_names}]  
         Action Input: a entrada para a ação  
         Observation: o resultado da ação  
         ... (este Thought/Action/Action Input/Observation pode se repetir N vezes)
         Thought: Agora eu sei a resposta final  
-        Final Answer: a resposta final para a pergunta de entrada original.
-        Quando usar a ferramenta_python: formate sua resposta final de forma clara, em lista, com valores separados por vírgulas e duas casas decimais sempre que apresentar números.
+        Final Answer: a resposta final para a solicitação original.
+
+        Diretrizes financeiras obrigatórias:
+        - Sempre formate valores monetários no padrão brasileiro de moeda (ex: R$ 1.250,50).
+        - Ao responder consultas pontuais com Consultas_Financeiras_Python: apresente os resultados de forma clara, organizada em listas ou tabelas, com explicações objetivas e precisão nos cálculos.
 
         Comece!
 
@@ -90,67 +102,87 @@ if arquivo_carregado:
         Thought: {agent_scratchpad}"""
     )
 
-    # Agente
+    # Inicialização do Agente ReAct
     agente = create_react_agent(llm=llm, tools=tools, prompt=prompt_react_pt)
-    orquestrador = AgentExecutor(agent=agente,
-                                tools=tools,
-                                verbose=True,
-                                handle_parsing_errors=True)
+    orquestrador = AgentExecutor(
+        agent=agente,
+        tools=tools,
+        verbose=True,
+        handle_parsing_errors=True
+    )
 
-    # AÇÕES RÁPIDAS
+    # ==========================================
+    # AÇÕES RÁPIDAS (RELATÓRIOS EXECUTIVOS DE BPO)
+    # ==========================================
     st.markdown("---")
-    st.markdown("## ⚡ Ações rápidas")
+    st.markdown("## ⚡ Ações Rápidas de BPO Financeiro")
 
-    # Relatório de informações gerais
-    if st.button("📄 Relatório de informações gerais", key="botao_relatorio_geral"):
-        with st.spinner("Gerando relatório 🦜"):
-            resposta = orquestrador.invoke({"input": "Quero um relatório com informações sobre os dados"})
-            st.session_state['relatorio_geral'] = resposta["output"]
+    col_btn1, col_btn2 = st.columns(2)
 
-    # Exibe o relatório com botão de download
-    if 'relatorio_geral' in st.session_state:
-        with st.expander("Resultado: Relatório de informações gerais"):
-            st.markdown(st.session_state['relatorio_geral'])
+    # 1. Relatório de Faturamento e Receita
+    with col_btn1:
+        if st.button("📊 Relatório de Faturamento & Receita", key="botao_relatorio_faturamento", use_container_width=True):
+            with st.spinner("Gerando diagnóstico de faturamento 💼"):
+                resposta = orquestrador.invoke({"input": "Gere um relatório executivo completo de faturamento e receita"})
+                st.session_state['relatorio_faturamento'] = resposta["output"]
 
+    # 2. Relatório de Inadimplência e Aging List
+    with col_btn2:
+        if st.button("🚨 Relatório de Inadimplência & Aging", key="botao_relatorio_inadimplencia", use_container_width=True):
+            with st.spinner("Gerando análise de contas a receber e aging 💼"):
+                resposta = orquestrador.invoke({"input": "Gere um relatório detalhado de inadimplência, aging list e contas a receber"})
+                st.session_state['relatorio_inadimplencia'] = resposta["output"]
+
+    # Exibição dos Relatórios Salvos
+    if 'relatorio_faturamento' in st.session_state:
+        with st.expander("📄 Resultado: Relatório Executivo de Faturamento & Receita", expanded=True):
+            st.markdown(st.session_state['relatorio_faturamento'])
             st.download_button(
-                label="📥 Baixar relatório",
-                data=st.session_state['relatorio_geral'],
-                file_name="relatorio_informacoes_gerais.md",
+                label="📥 Baixar Relatório de Faturamento (.md)",
+                data=st.session_state['relatorio_faturamento'],
+                file_name="relatorio_faturamento_receita.md",
                 mime="text/markdown"
             )
 
-    # Relatório de estatísticas descritivas
-    if st.button("📄 Relatório de estatísticas descritivas", key="botao_relatorio_estatisticas"):
-        with st.spinner("Gerando relatório 🦜"):
-            resposta = orquestrador.invoke({"input": "Quero um relatório de estatísticas descritivas"})
-            st.session_state['relatorio_estatisticas'] = resposta["output"]
-
-    # Exibe o relatório salvo com opção de download
-    if 'relatorio_estatisticas' in st.session_state:
-        with st.expander("Resultado: Relatório de estatísticas descritivas"):
-            st.markdown(st.session_state['relatorio_estatisticas'])
-
+    if 'relatorio_inadimplencia' in st.session_state:
+        with st.expander("📄 Resultado: Relatório de Inadimplência & Aging List", expanded=True):
+            st.markdown(st.session_state['relatorio_inadimplencia'])
             st.download_button(
-                label="📥 Baixar relatório",
-                data=st.session_state['relatorio_estatisticas'],
-                file_name="relatorio_estatisticas_descritivas.md",
-                mime="text/markdown"  
+                label="📥 Baixar Relatório de Inadimplência (.md)",
+                data=st.session_state['relatorio_inadimplencia'],
+                file_name="relatorio_inadimplencia_aging.md",
+                mime="text/markdown"
             )
-   
-    # PERGUNTA SOBRE OS DADOS
-    st.markdown("---")
-    st.markdown("## 🔎 Perguntas sobre os dados")
-    pergunta_sobre_dados = st.text_input("Faça uma pergunta sobre os dados (ex: 'Qual é a média do tempo de entrega?')")
-    if st.button("Responder pergunta", key="responder_pergunta_dados"):
-        with st.spinner("Analisando os dados 🦜"):
-            resposta = orquestrador.invoke({"input": pergunta_sobre_dados})
-            st.markdown((resposta["output"]))
 
-    # GERAÇÃO DE GRÁFICOS
+    # ==========================================
+    # CONSULTAS EM LINGUAGEM NATURAL
+    # ==========================================
     st.markdown("---")
-    st.markdown("## 📊 Criar gráfico com base em uma pergunta")
+    st.markdown("## 🔎 Consultas de Faturamento e Contas a Receber")
+    pergunta_sobre_dados = st.text_input(
+        "Faça uma pergunta sobre os dados financeiros:",
+        placeholder="Ex: 'Qual o faturamento total por cliente?', 'Qual o valor total de títulos vencidos?', 'Qual o ticket médio?'"
+    )
+    if st.button("Consultar Dados", key="responder_pergunta_dados"):
+        if pergunta_sobre_dados.strip():
+            with st.spinner("Consultando base de faturamento 💼"):
+                resposta = orquestrador.invoke({"input": pergunta_sobre_dados})
+                st.markdown(resposta["output"])
+        else:
+            st.warning("Por favor, digite uma pergunta antes de consultar.")
 
-    pergunta_grafico = st.text_input("Digite o que deseja visualizar (ex: 'Crie um gráfico da média de tempo de entrega por clima.')")
-    if st.button("Gerar gráfico", key="gerar_grafico"):
-        with st.spinner("Gerando o gráfico 🦜"):
-            orquestrador.invoke({"input": pergunta_grafico})
+    # ==========================================
+    # GERAÇÃO DE GRÁFICOS FINANCEIROS
+    # ==========================================
+    st.markdown("---")
+    st.markdown("## 📈 Gerar Gráficos Financeiros")
+    pergunta_grafico = st.text_input(
+        "Descreva o gráfico financeiro que deseja visualizar:",
+        placeholder="Ex: 'Crie um gráfico de barras com o top 10 clientes por faturamento', 'Plote a evolução do faturamento por data', 'Gráfico de pizza dos meios de pagamento'"
+    )
+    if st.button("Gerar Gráfico Financeiro", key="gerar_grafico"):
+        if pergunta_grafico.strip():
+            with st.spinner("Gerando visualização financeira 💼"):
+                orquestrador.invoke({"input": pergunta_grafico})
+        else:
+            st.warning("Por favor, descreva o gráfico antes de gerar.")

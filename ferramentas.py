@@ -10,7 +10,7 @@ import seaborn as sns
 import streamlit as st
 from langchain_experimental.tools import PythonAstREPLTool
 
-# Obtenção da chave de api
+# Obtenção da chave de API
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -21,55 +21,57 @@ llm = ChatGroq(
     temperature=0
 )
 
-# Relatório informações
+# 1. Relatório Executivo de Faturamento e Receita
 @tool
-def informacoes_dataframe(pergunta: str, df: pd.DataFrame) -> str:
-    """Utilize esta ferramenta sempre que o usuário solicitar informações gerais sobre o dataframe,
-        incluindo número de colunas e linhas, nomes das colunas e seus tipos de dados, contagem de dados
-        nulos e duplicados para dar um panomara geral sobre o arquivo."""
-
-    # Coleta de informações
+def relatorio_faturamento_receita(pergunta: str, df: pd.DataFrame) -> str:
+    """
+    Utilize esta ferramenta sempre que o usuário solicitar um relatório executivo de faturamento,
+    visão geral da receita, faturamento por cliente/produto/serviço, análise de meios de pagamento
+    ou saúde cadastral e volumetria da base de faturamento.
+    """
+    # Coleta de métricas e estrutura dos dados
     shape = df.shape
-    columns = df.dtypes
-    nulos = df.isnull().sum()
-    nans_str = df.apply(lambda col: col[~col.isna()].astype(str).str.strip().str.lower().eq('nan').sum())
-    duplicados = df.duplicated().sum()
+    columns = df.dtypes.to_dict()
+    nulos = df.isnull().sum().to_dict()
+    duplicados = int(df.duplicated().sum())
+    
+    # Estatísticas de colunas numéricas (valores, quantidades, etc.)
+    describe_num = df.describe(include=['number']).transpose().to_string() if not df.select_dtypes(include=['number']).empty else "Nenhuma coluna numérica identificada"
+    amostra = df.head(3).to_dict(orient='records')
 
-   # Prompt de resposta 
-    template_resposta = PromptTemplate( 
-        template=""" 
-        Você é um analista de dados encarregado de apresentar um resumo informativo sobre um DataFrame 
-        a partir de uma {pergunta} feita pelo usuário. 
+    # Prompt especializado em BPO Financeiro e Faturamento
+    template_resposta = PromptTemplate(
+        template="""
+        Você é um Consultor Sênior de BPO Financeiro e Controladoria encarregado de emitir um
+        Relatório Executivo de Faturamento a partir da solicitação: "{pergunta}".
 
-        A seguir, você encontrará as informações gerais da base de dados: 
+        Abaixo estão as informações e métricas extraídas da planilha de faturamento:
 
-        ================= INFORMAÇÕES DO DATAFRAME ================= 
+        ================= DADOS E ESTRUTURA DO FATURAMENTO =================
+        - Dimensões da base: {shape} (linhas x colunas)
+        - Colunas e tipos: {columns}
+        - Lançamentos duplicados: {duplicados}
+        - Campos vazios / inconsistências: {nulos}
+        - Estatísticas descritivas das colunas numéricas:
+{describe_num}
 
-        Dimensões: {shape}
- 
-        Colunas e tipos de dados: {columns} 
+        - Amostra dos registros (3 primeiras linhas):
+{amostra}
+        ===================================================================
 
-        Valores nulos por coluna: {nulos} 
+        Elabore um relatório executivo profissional, claro, estratégico e em linguagem financeira formal contendo:
 
-        Strings 'nan' (qualquer capitalização) por coluna: {nans_str} 
+        1. Título: ## 📊 Relatório Executivo de Faturamento e Receita
+        2. **Visão Geral do Faturamento**: Volume total de notas/faturas emitidas, médias de valores identificados (ticket médio) e dispersão de valores.
+        3. **Estrutura dos Dados e Lançamentos**: Descrição das principais colunas financeiras (identificação de datas, clientes, valores brutos/líquidos, impostos ou status).
+        4. **Qualidade dos Dados Contábeis/Fiscais**: Apontamento de campos nulos ou duplicidades que possam impactar o fechamento contábil.
+        5. **Destaques e Concentração de Receita**: Padrões observados nas faturas (ex: concentração em clientes, sazonalidade ou métodos de cobrança).
+        6. **Recomendações Práticas de BPO**: Sugestões para otimização do processo de faturamento, mitigação de riscos operacionais e melhoria de fluxo de caixa.
 
-        Linhas duplicadas: {duplicados} 
-
-        ============================================================ 
-
-        Com base nessas informações, escreva um resumo claro e organizado contendo: 
-
-        1. Um título: ## Relatório de informações gerais sobre o dataset 
-        2. A dimensão total do DataFrame; 
-        3. A descrição de cada coluna (incluindo nome, tipo de dado e o que aquela coluna é) 
-        4. As colunas que contêm dados nulos, com a respectiva quantidade.  
-        5. As colunas que contêm strings 'nan', com a respectiva quantidade. 
-        6. E a existência (ou não) de dados duplicados. 
-        7. Escreva um parágrafo sobre análises que podem ser feitas com esses dados. 
-        8. Escreva um parágrafo sobre tratamentos que podem ser feitos nos dados. 
-        """, 
-        input_variables=["pergunta","shape", "columns", "nulos", "nans_str", "duplicados"]
-    ) 
+        Formate valores monetários no padrão brasileiro (R$ X.XXX,XX).
+        """,
+        input_variables=["pergunta", "shape", "columns", "duplicados", "nulos", "describe_num", "amostra"]
+    )
 
     cadeia = template_resposta | llm | StrOutputParser()
 
@@ -77,75 +79,85 @@ def informacoes_dataframe(pergunta: str, df: pd.DataFrame) -> str:
         "pergunta": pergunta,
         "shape": shape,
         "columns": columns,
+        "duplicados": duplicados,
         "nulos": nulos,
-        "nans_str": nans_str,
-        "duplicados": duplicados
+        "describe_num": describe_num,
+        "amostra": amostra
     })
 
     return resposta
 
-# Relatório estatístico
+
+# 2. Relatório de Inadimplência, Aging List e Contas a Receber
 @tool
-def resumo_estatistico(pergunta: str, df: pd.DataFrame) -> str:
+def relatorio_inadimplencia_aging(pergunta: str, df: pd.DataFrame) -> str:
     """
-    Utilize esta ferramenta sempre que o usuário solicitar um resumo estatístico completo e descritivo da base de dados,
-    incluindo várias estatísticas (média, desvio padrão, mínimo, máximo etc.).
-    Não utilize esta ferramenta para calcular uma única métrica como 'qual é a média de X' ou 'qual a correlação das variáveis'.
+    Utilize esta ferramenta sempre que o usuário solicitar uma análise de inadimplência,
+    contas a receber, aging list (faixas de atraso), faturas pendentes/vencidas,
+    avaliação de clientes devedores ou estratégias para régua de cobrança.
     """
-    # Coleta de estatísticas descritivas
-    estatisticas_descritivas = df.describe(include=['number']).transpose().to_string()
-    
-    # Prompt de resposta
+    # Coleta de métricas financeiras
+    colunas = df.dtypes.to_dict()
+    describe_num = df.describe(include=['number']).transpose().to_string() if not df.select_dtypes(include=['number']).empty else "Nenhuma coluna numérica identificada"
+    amostra = df.head(3).to_dict(orient='records')
+
+    # Prompt especializado em Contas a Receber e Cobrança
     template_resposta = PromptTemplate(
         template="""
-        Você é um analista de dados encarregado de interpretar resultados estatísticos de uma base de dados
-        a partir de uma {pergunta} feita pelo usuário.
+        Você é um Especialista em BPO Financeiro com foco em Gestão de Contas a Receber, Crédito e Cobrança.
+        Sua missão é gerar um diagnóstico detalhado da carteira de recebíveis com base na solicitação: "{pergunta}".
 
-        A seguir, você encontrará as estatísticas descritivas da base de dados:
+        Dados da carteira de recebíveis:
+        ================= ESTATÍSTICAS E ESTRUTURA DA CARTEIRA =================
+        Colunas disponíveis: {colunas}
+        Estatísticas numéricas:
+{describe_num}
 
-        ================= ESTATÍSTICAS DESCRITIVAS =================
+        Amostra dos registros:
+{amostra}
+        ========================================================================
 
-        {resumo}
+        Elabore um diagnóstico financeiro estratégico contendo:
 
-        ============================================================
+        1. Título: ## 🚨 Relatório de Inadimplência, Aging List e Contas a Receber
+        2. **Diagnóstico da Carteira**: Análise da distribuição dos valores das faturas, prazos de vencimento e identificação dos status de pagamento.
+        3. **Faixas de Vencimento (Aging List) e Inadimplência**: Análise dos títulos em aberto, vencidos e liquidados, apontando os maiores impactos no fluxo de caixa.
+        4. **Concentração de Risco de Crédito**: Alerta sobre potenciais clientes críticos, valores atípicos (outliers) ou acúmulo de duplicatas não liquidadas.
+        5. **Plano de Ação e Régua de Cobrança**: Recomendações práticas para recuperação de crédito, ações preventivas pré-vencimento e medidas corretivas para títulos em atraso.
 
-        Com base nesses dados, elabore um resumo explicativo com linguagem clara, acessível e fluida, destacando
-        os principais pontos dos resultados. Inclua:
-
-        1. Um título: ## Relatório de estatísticas descritivas
-        2. Uma visão geral das estatísticas das colunas numéricas
-        3. Um paráfrago sobre cada uma das colunas, comentando informações sobre seus valores.
-        4. Identificação de possíveis outliers com base nos valores mínimo e máximo
-        5. Recomendações de próximos passos na análise com base nos padrões identificados
+        Utilize termos do mercado financeiro e formate todos os valores monetários no padrão brasileiro (R$ X.XXX,XX).
         """,
-        input_variables=["pergunta", "resumo"]
+        input_variables=["pergunta", "colunas", "describe_num", "amostra"]
     )
 
     cadeia = template_resposta | llm | StrOutputParser()
 
-    resposta = cadeia.invoke({"pergunta": pergunta, "resumo": estatisticas_descritivas})
+    resposta = cadeia.invoke({
+        "pergunta": pergunta,
+        "colunas": colunas,
+        "describe_num": describe_num,
+        "amostra": amostra
+    })
 
     return resposta
 
-# Gerador de gráficos 
-@tool
-def gerar_grafico(pergunta: str, df: pd.DataFrame) -> str:
-    """
-    Utilize esta ferramenta sempre que o usuário solicitar um gráfico a partir de um DataFrame pandas (`df`) com base em uma instrução do usuário.
-    A instrução pode conter pedidos como: 'Crie um gráfico da média de tempo de entrega por clima','Plote a distribuição do tempo de entrega'"
-    ou "Plote a relação entre a classifição dos agentes e o tempo de entrega. Palavras-chave comuns que indicam o uso desta ferramenta incluem:
-    'crie um gráfico', 'plote', 'visualize', 'faça um gráfico de', 'mostre a distribuição', 'represente graficamente', entre outros."""
 
-    # Captura informações sobre o dataframe
+# 3. Gerador de Gráficos Financeiros
+@tool
+def gerar_grafico_financeiro(pergunta: str, df: pd.DataFrame) -> str:
+    """
+    Utilize esta ferramenta sempre que o usuário solicitar a criação de gráficos ou visualizações financeiras
+    a partir da base de dados de faturamento e contas a receber.
+    Exemplos: 'Crie um gráfico de faturamento por cliente', 'Plote a distribuição das faturas por status de pagamento',
+    'Faça um gráfico da evolução do faturamento', 'Gráfico de barras dos maiores clientes', 'Curva ABC de faturamento'.
+    """
     colunas_info = "\n".join([f"- {col} ({dtype})" for col, dtype in df.dtypes.items()])
     amostra_dados = df.head(3).to_dict(orient='records')
 
-    # Template otimizado para geração de código de gráficos
     template_resposta = PromptTemplate(
         template="""
-        Você é um especialista em visualização de dados. Sua tarefa é gerar **apenas o código Python** para plotar um gráfico com base na solicitação do usuário.
-
-        ## Solicitação do usuário:
+        Você é um especialista em visualização de dados financeiros e BI para BPO Financeiro.
+        Sua tarefa é gerar **apenas o código Python** para plotar um gráfico financeiro profissional baseado na solicitação:
         "{pergunta}"
 
         ## Metadados do DataFrame:
@@ -154,27 +166,28 @@ def gerar_grafico(pergunta: str, df: pd.DataFrame) -> str:
         ## Amostra dos dados (3 primeiras linhas):
         {amostra}
 
-        ## Instruções obrigatórias:
+        ## Diretrizes obrigatórias de visualização financeira:
         1. Use as bibliotecas `matplotlib.pyplot` (como `plt`) e `seaborn` (como `sns`).
-        2. Defina o tema com `sns.set_theme()`
-        3. Certifique-se de que todas as colunas mencionadas na solicitação existem no DataFrame chamado `df`.
-        4. Escolha o tipo de gráfico adequado conforme a análise solicitada:
-        - **Distribuição de variáveis numéricas**: `histplot`, `kdeplot`, `boxplot` ou `violinplot`
-        - **Distribuição de variáveis categóricas**: `countplot` 
-        - **Comparação entre categorias**: `barplot`
-        - **Relação entre variáveis**: `scatterplot` ou `lineplot`
-        - **Séries temporais**: `lineplot`, com o eixo X formatado como datas
-        5. Configure o tamanho do gráfico com `figsize=(8, 4)`.
-        6. Adicione título e rótulos (`labels`) apropriados aos eixos.
-        7. Posicione o título à esquerda com `loc='left'`, deixe o `pad=20` e use `fontsize=14`.
-        8. Mantenha os ticks eixo X sem rotação com `plt.xticks(rotation=0)`
-        9. Remova as bordas superior e direita do gráfico com `sns.despine()`.
-        10. Finalize o código com `plt.show()`.
+        2. Defina o tema moderno com `sns.set_theme(style="whitegrid")`.
+        3. Verifique com atenção os nomes exatos das colunas existentes no DataFrame `df`.
+        4. Escolha o tipo de gráfico adequado para o contexto financeiro:
+           - **Evolução de faturamento / Tendência temporal**: `lineplot` com datas ordenadas no eixo X.
+           - **Top Clientes / Produtos / Vendedores**: `barplot` horizontal (ex: `y='cliente', x='valor'`) ordenado por valor decrescente.
+           - **Distribuição de status (Pago, Pendente, Atrasado, Meios de Pagamento)**: `countplot` ou gráfico de pizza/rosca.
+           - **Distribuição de valores de notas/faturas**: `histplot` ou `boxplot` para identificar outliers.
+        5. Configure tamanho adequado com `figsize=(9, 4.5)`.
+        6. Adicione título descritivo e corporativo alinhado à esquerda com `loc='left'`, `pad=15` e `fontsize=13`.
+        7. Adicione rótulos claros nos eixos X e Y.
+        8. Se o eixo X tiver muitas categorias ou datas, rotacione as legendas com `plt.xticks(rotation=45, ha='right')`.
+        9. Se o eixo representar valores monetários, formate adequadamente.
+        10. Remova bordas desnecessárias com `sns.despine()`.
+        11. Finalize com `plt.tight_layout()` e `plt.show()`.
 
-        Retorne APENAS o código Python, sem nenhum texto adicional ou explicação.
+        Retorne APENAS o código Python executável, sem markdown explicativo em volta.
 
         Código Python:
-        """, input_variables=["pergunta", "colunas", "amostra"]
+        """,
+        input_variables=["pergunta", "colunas", "amostra"]
     )
 
     cadeia = template_resposta | llm | StrOutputParser()
@@ -184,59 +197,60 @@ def gerar_grafico(pergunta: str, df: pd.DataFrame) -> str:
         "amostra": amostra_dados
     })
 
+    # Limpeza de blocos markdown caso o LLM inclua
     codigo_limpo = codigo_bruto.replace("```python", "").replace("```", "").strip()
 
-    exec_globals = {'df': df, 'plt': plt, 'sns': sns}
+    # Execução do código gerado
+    exec_globals = {'df': df, 'plt': plt, 'sns': sns, 'pd': pd}
     exec_locals = {}
     exec(codigo_limpo, exec_globals, exec_locals)
 
     fig = plt.gcf()
     st.pyplot(fig)
-        
-    return "" 
+    plt.close(fig)
 
-# Função para criar ferramentas 
+    return ""
+
+
+# 4. Fábrica de Ferramentas para o Agente ReAct
 def criar_ferramentas(df):
-    ferramenta_informacoes_dataframe = Tool(
-        name="Informações Dataframe",
-        func=lambda pergunta: informacoes_dataframe.run({"pergunta": pergunta, "df": df}),
-        description="""Utilize esta ferramenta sempre que o usuário solicitar informações gerais sobre o dataframe,
-        incluindo número de colunas e linhas, nomes das colunas e seus tipos de dados, contagem de dados
-        nulos e duplicados para dar um panomara geral sobre o arquivo.""",
+    ferramenta_faturamento = Tool(
+        name="Relatorio_Faturamento_Receita",
+        func=lambda pergunta: relatorio_faturamento_receita.run({"pergunta": pergunta, "df": df}),
+        description="""Utilize esta ferramenta sempre que o usuário solicitar um relatório geral de faturamento,
+        análise de receita, visão geral das faturas emitidas, ticket médio, dados cadastrais e fiscais da base.""",
         return_direct=True
     )
 
-    ferramenta_resumo_estatistico = Tool(
-        name="Resumo Estatístico",
-        func=lambda pergunta: resumo_estatistico.run({"pergunta": pergunta, "df": df}),
-        description="""Utilize esta ferramenta sempre que o usuário solicitar um resumo estatístico completo e descritivo da base de dados,
-        incluindo várias estatísticas (média, desvio padrão, mínimo, máximo etc.) e/ou múltiplas colunas numéricas.
-        Não utilize esta ferramenta para calcular uma única métrica como 'qual é a média de X' ou 'qual a correlação das variáveis'.
-        Para isso, use a ferramenta_python.""",
+    ferramenta_inadimplencia = Tool(
+        name="Relatorio_Inadimplencia_Aging",
+        func=lambda pergunta: relatorio_inadimplencia_aging.run({"pergunta": pergunta, "df": df}),
+        description="""Utilize esta ferramenta sempre que o usuário solicitar um relatório ou diagnóstico sobre inadimplência,
+        contas a receber, aging list (títulos vencidos por faixas de dias), títulos pendentes e estratégias de régua de cobrança.""",
         return_direct=True
     )
 
-    ferramenta_gerar_grafico = Tool(
-        name="Gerar Gráfico",
-        func=lambda pergunta: gerar_grafico.run({"pergunta": pergunta, "df": df}),
-        description="""Utilize esta ferramenta sempre que o usuário solicitar um gráfico a partir de um DataFrame pandas (`df`) com base em uma instrução do usuário.
-        A instrução pode conter pedidos como: 'Crie um gráfico da média de tempo de entrega por clima','Plote a distribuição do tempo de entrega'"
-        ou "Plote a relação entre a classificação dos agentes e o tempo de entrega. Palavras-chave comuns que indicam o uso desta ferramenta incluem:
-        'crie um gráfico', 'plote', 'visualize', 'faça um gráfico de', 'mostre a distribuição', 'represente graficamente', entre outros.""",
+    ferramenta_graficos = Tool(
+        name="Gerar_Grafico_Financeiro",
+        func=lambda pergunta: gerar_grafico_financeiro.run({"pergunta": pergunta, "df": df}),
+        description="""Utilize esta ferramenta sempre que o usuário solicitar qualquer visualização, gráfico ou plotagem
+        sobre dados de faturamento, evolução de receitas, comparativo de clientes, formas de pagamento ou status de títulos.
+        Palavras-chave: 'gráfico', 'plote', 'visualize', 'faça um gráfico de', 'evolução de faturamento', 'curva ABC'.""",
         return_direct=True
     )
-    
-    ferramenta_codigos_python = Tool(
-        name="Códigos Python",
+
+    ferramenta_python = Tool(
+        name="Consultas_Financeiras_Python",
         func=PythonAstREPLTool(locals={"df": df}),
-        description="""Utilize esta ferramenta sempre que o usuário solicitar cálculos, consultas ou transformações específicas usando Python diretamente sobre o DataFrame `df`.
-        Exemplos de uso incluem: "Qual é a média da coluna X?", "Quais são os valores únicos da coluna Y?", "Qual a correlação entre A e B?". 
-        Evite utilizar esta ferramenta para solicitações mais amplas ou descritivas, como informações gerais sobre o dataframe, resumos estatísticos completos ou geração de gráficos — nesses casos, use as ferramentas apropriadas."""
+        description="""Utilize esta ferramenta para calcular métricas financeiras pontuais, filtros específicos e consultas detalhadas
+        em Python no DataFrame `df`. Exemplos: 'Qual o faturamento total em Março?', 'Quais clientes estão com faturas acima de R$ 5.000?',
+        'Qual o valor total recebido via PIX?', 'Quantas faturas estão com status vencido?'.
+        Não use esta ferramenta para relatórios completos ou geração de gráficos."""
     )
 
     return [
-        ferramenta_informacoes_dataframe, 
-        ferramenta_resumo_estatistico, 
-        ferramenta_gerar_grafico,
-        ferramenta_codigos_python
+        ferramenta_faturamento,
+        ferramenta_inadimplencia,
+        ferramenta_graficos,
+        ferramenta_python
     ]

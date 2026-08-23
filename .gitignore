@@ -21,3 +21,8 @@ pyrightconfig.json
 # Arquivos do sistema operacional
 .DS_Store
 Thumbs.db
+
+# Logs e relatórios temporários
+logs.txt
+*.log
+

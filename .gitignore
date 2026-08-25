@@ -31,5 +31,3 @@ export_*.csv
 # Submódulos locais temporários
 profile-repo/
 
-# Imagens e capturas locais
-assets/

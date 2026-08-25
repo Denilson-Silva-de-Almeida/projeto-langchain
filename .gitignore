@@ -25,4 +25,11 @@ Thumbs.db
 # Logs e relatórios temporários
 logs.txt
 *.log
+export_*.csv
+* (1).*
 
+# Submódulos locais temporários
+profile-repo/
+
+# Imagens e capturas locais
+assets/
